@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Search, MapPin, Star, Heart, X, TrendingUp, Compass } from 'lucide-react'
+import { Search, MapPin, Star, Heart, X, TrendingUp, Compass, Globe } from 'lucide-react'
 import { Card } from '../components/common/Card'
 import { Button } from '../components/common/Button'
 import { Badge } from '../components/common/Badge'
@@ -10,6 +10,7 @@ import { searchApi } from '../api/search'
 import { citiesApi } from '../api/cities'
 import { activitiesApi } from '../api/activities'
 import { tripsApi } from '../api/trips'
+import { placesApi } from '../api/places'
 import { useAuthStore } from '../store/authStore'
 import { usersApi } from '../api/users'
 
@@ -30,6 +31,7 @@ export default function Explore() {
   const [cities, setCities] = useState([])
   const [activeType, setActiveType] = useState('all')
   const [savedIds, setSavedIds] = useState(new Set())
+  const [externalCities, setExternalCities] = useState([])
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -56,7 +58,14 @@ export default function Explore() {
           if (activeType !== 'all') params.type = activeType
           const { data } = await searchApi.search(params)
           setResults(data)
+          // If DB returned few/no cities, also search worldwide via Nominatim
+          if ((activeType === 'all' || activeType === 'city') && data.cities.length < 3) {
+            placesApi.citySearch(query).then(r => setExternalCities(r.data || [])).catch(() => {})
+          } else {
+            setExternalCities([])
+          }
         } else {
+          setExternalCities([])
           if (activeType === 'city') {
             const { data } = await citiesApi.getAll({ limit: 20 })
             setResults({ cities: data, activities: [], trips: [] })
@@ -88,7 +97,7 @@ export default function Explore() {
     } catch { toast.error('Failed to update') }
   }
 
-  const hasResults = results.cities.length > 0 || results.activities.length > 0 || results.trips.length > 0
+  const hasResults = results.cities.length > 0 || results.activities.length > 0 || results.trips.length > 0 || externalCities.length > 0
   const isSearching = query || activeType !== 'all'
 
   return (
@@ -181,6 +190,18 @@ export default function Explore() {
               </div>
             </section>
           )}
+          {externalCities.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                <Globe size={13} className="text-primary-light" /> Worldwide Destinations
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {externalCities.map(city => (
+                  <ExternalCityCard key={city.id} city={city} />
+                ))}
+              </div>
+            </section>
+          )}
           {results.trips.length > 0 && (
             <section>
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Trips</h2>
@@ -209,7 +230,7 @@ export default function Explore() {
         <div className="text-center py-20">
           <div className="text-6xl mb-4">🔍</div>
           <p className="text-white font-semibold text-lg">No results found</p>
-          <p className="text-muted mt-1">Try a different search term or filter</p>
+          <p className="text-muted mt-1">Try a different search term or browse popular destinations below</p>
         </div>
       ) : (
         /* Popular Destinations */
