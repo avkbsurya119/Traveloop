@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Plus, Trash2, GripVertical, Save, Upload, AlertTriangle,
-  Sun, Sunset, Moon, Plane, ChevronLeft, DollarSign, Clock
+  Sun, Sunset, Moon, Plane, ChevronLeft, DollarSign, Clock,
+  Globe, Loader2, ExternalLink
 } from 'lucide-react'
 import { Card, CardContent } from '../components/common/Card'
 import { Input } from '../components/common/Input'
@@ -11,6 +12,7 @@ import { toast } from '../components/common/Toast'
 import { useTripStore } from '../store/tripStore'
 import { tripsApi } from '../api/trips'
 import { activitiesApi } from '../api/activities'
+import { placesApi } from '../api/places'
 import { format } from 'date-fns'
 
 const SECTION_TYPES = [
@@ -30,6 +32,9 @@ export default function BuildItinerary() {
   const [isSaving, setIsSaving] = useState(false)
   const [activeStopIdx, setActiveStopIdx] = useState(0)
   const [dragIdx, setDragIdx] = useState(null)
+  const [wikiPlaces, setWikiPlaces] = useState([])
+  const [wikiLoading, setWikiLoading] = useState(false)
+  const [showDiscover, setShowDiscover] = useState(false)
   const csvRef = useRef(null)
 
   useEffect(() => {
@@ -48,7 +53,46 @@ export default function BuildItinerary() {
       activitiesApi.getAll({ city_id: stop.cityId, limit: 20 })
         .then(res => setActivities(res.data)).catch(() => {})
     }
+    // Reset discover panel when stop changes
+    setShowDiscover(false)
+    setWikiPlaces([])
   }, [trip, activeStopIdx])
+
+  const discoverPlaces = async () => {
+    const stop = trip?.stops?.[activeStopIdx]
+    const lat = stop?.city?.latitude
+    const lon = stop?.city?.longitude
+    const cityName = stop?.city?.name
+    if (!lat || !lon) {
+      toast.error('No coordinates for this city')
+      return
+    }
+    setShowDiscover(true)
+    setWikiLoading(true)
+    try {
+      const { data } = await placesApi.getAttractions(lat, lon, cityName)
+      setWikiPlaces(data || [])
+    } catch {
+      toast.error('Could not load attractions')
+    } finally {
+      setWikiLoading(false)
+    }
+  }
+
+  const quickAddWiki = (place) => {
+    if (!activeStop) return
+    setItems(prev => [...prev, {
+      id: `temp-${Date.now()}`,
+      stopId: activeStop.id,
+      customTitle: place.name,
+      date: trip?.startDate || '',
+      cost: 0,
+      notes: `Wikipedia: ${place.wikiUrl}`,
+      sectionType: 'morning',
+      isNew: true,
+    }])
+    toast.success(`Added "${place.name}"`)
+  }
 
   const activeStop = trip?.stops?.[activeStopIdx]
   const stopItems = items.filter(item => item.stopId === activeStop?.id)

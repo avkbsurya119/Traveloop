@@ -297,6 +297,39 @@ function CityCard({ city, savedIds, onToggleSave, large }) {
   )
 }
 
+function ExternalCityCard({ city }) {
+  const label = [city.state, city.country].filter(Boolean).join(', ')
+  return (
+    <Link to={`/trips/new?city=${encodeURIComponent(city.name)}&country=${encodeURIComponent(city.country)}`}>
+      <div className="relative group rounded-2xl overflow-hidden cursor-pointer card-hover border border-primary/20">
+        <div className="relative h-40">
+          <img
+            src={city.imageUrl}
+            alt={city.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className="absolute top-2 left-2">
+            <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/80 backdrop-blur-sm rounded-full text-[10px] text-white font-semibold">
+              <Globe size={9} /> Worldwide
+            </span>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <p className="text-white font-bold text-lg leading-tight">{city.name}</p>
+            <p className="text-white/70 text-sm">{label}</p>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <span className="px-4 py-2 bg-primary text-white rounded-full font-semibold text-sm shadow-xl transform translate-y-3 group-hover:translate-y-0 transition-transform duration-300">
+              Plan a Trip →
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 function ActivityCard({ activity }) {
   return (
     <div className="flex gap-3 p-3 bg-surface border border-border rounded-xl hover:border-primary/30 transition-all group">
