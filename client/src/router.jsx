@@ -24,6 +24,9 @@ import Expenses from './pages/Expenses'
 import Invoice from './pages/Invoice'
 import Admin from './pages/Admin'
 import Landing from './pages/Landing'
+import AboutUs from './pages/AboutUs'
+import Contact from './pages/Contact'
+import TravelPackages from './pages/TravelPackages'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
@@ -75,8 +78,11 @@ export default function AppRouter() {
         <Route path="/admin" element={<Admin />} />
       </Route>
 
-      {/* Landing page */}
+      {/* Landing page and Public Pages */}
       <Route path="/" element={<Landing />} />
+      <Route path="/about-us" element={<AboutUs />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/travel-packages" element={<TravelPackages />} />
       <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   )
