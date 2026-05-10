@@ -9,15 +9,15 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#1A6B4A",
-          light: "#2ECC71",
+          DEFAULT: "var(--color-primary)",
+          light: "var(--color-primary-light)",
         },
-        secondary: "#F4A623",
-        dark: "#1C1C2E",
-        surface: "#252540",
-        border: "#3A3A5C",
+        secondary: "var(--color-secondary)",
+        dark: "var(--color-dark)",
+        surface: "var(--color-surface)",
+        border: "var(--color-border)",
         danger: "#E74C3C",
-        muted: "#8888AA",
+        muted: "var(--color-muted)",
       },
       fontFamily: {
         display: ['Syne', 'sans-serif'],

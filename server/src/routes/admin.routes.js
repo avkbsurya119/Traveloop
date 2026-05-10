@@ -14,17 +14,17 @@ router.get('/stats', async (req, res, next) => {
       totalUsers,
       totalTrips,
       totalPosts,
+      totalCities,
       tripsByStatus,
       recentUsers,
-      popularCities
+      popularCities,
+      budgetAgg
     ] = await Promise.all([
       prisma.user.count({ where: { isActive: true } }),
       prisma.trip.count(),
       prisma.communityPost.count(),
-      prisma.trip.groupBy({
-        by: ['status'],
-        _count: true
-      }),
+      prisma.city.count(),
+      prisma.trip.groupBy({ by: ['status'], _count: true }),
       prisma.user.findMany({
         where: { isActive: true },
         orderBy: { createdAt: 'desc' },
@@ -36,10 +36,10 @@ router.get('/stats', async (req, res, next) => {
         _count: true,
         orderBy: { _count: { cityId: 'desc' } },
         take: 10
-      })
+      }),
+      prisma.trip.aggregate({ _sum: { totalBudget: true }, _avg: { totalBudget: true } })
     ]);
 
-    // Get city names for popular cities
     const cityIds = popularCities.map(c => c.cityId);
     const cities = await prisma.city.findMany({
       where: { id: { in: cityIds } },
@@ -55,6 +55,10 @@ router.get('/stats', async (req, res, next) => {
       totalUsers,
       totalTrips,
       totalPosts,
+      totalCities,
+      activeUsers: totalUsers,
+      totalBudget: Number(budgetAgg._sum.totalBudget || 0),
+      avgBudget: Number(budgetAgg._avg.totalBudget || 0),
       tripsByStatus: tripsByStatus.reduce((acc, t) => {
         acc[t.status] = t._count;
         return acc;

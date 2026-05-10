@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, ChevronRight, ChevronLeft, Cloud, Droplets, Wind, MapPin, Plane, Globe } from 'lucide-react'
+import { Plus, ChevronRight, ChevronLeft, MapPin, Globe, Zap, TrendingUp, Cloud } from 'lucide-react'
 import { Card, CardTitle } from '../components/common/Card'
 import { Button } from '../components/common/Button'
 import { Badge } from '../components/common/Badge'
@@ -11,14 +11,34 @@ import { citiesApi } from '../api/cities'
 import { weatherApi } from '../api/weather'
 import { format } from 'date-fns'
 
-const heroSlides = [
-  { image: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1200', title: 'Discover Paradise', subtitle: 'Plan your dream beach getaway', gradient: 'from-cyan-600/80 to-blue-900/80' },
-  { image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200', title: 'Ancient Wonders', subtitle: 'Explore history and culture', gradient: 'from-amber-700/80 to-red-900/80' },
-  { image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200', title: 'City Adventures', subtitle: 'Experience the world\'s best cities', gradient: 'from-violet-700/80 to-indigo-900/80' },
-  { image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200', title: 'Mountain Escapes', subtitle: 'Find peace in the peaks', gradient: 'from-emerald-700/80 to-teal-900/80' },
+const HERO_SLIDES = [
+  {
+    image: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1400&q=85',
+    title: 'Discover Paradise',
+    subtitle: 'Your next beach escape awaits',
+    gradient: 'from-cyan-900/80 via-blue-900/60 to-transparent',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1400&q=85',
+    title: 'Ancient Wonders',
+    subtitle: 'Walk through centuries of history',
+    gradient: 'from-amber-900/80 via-orange-900/60 to-transparent',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1400&q=85',
+    title: 'City Adventures',
+    subtitle: "Experience the world's iconic cities",
+    gradient: 'from-violet-900/80 via-indigo-900/60 to-transparent',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1400&q=85',
+    title: 'Mountain Escapes',
+    subtitle: 'Find peace above the clouds',
+    gradient: 'from-emerald-900/80 via-teal-900/60 to-transparent',
+  },
 ]
 
-const regions = [
+const REGIONS = [
   { name: 'Asia', emoji: '🌏' },
   { name: 'Europe', emoji: '🏰' },
   { name: 'North America', emoji: '🗽' },
@@ -43,30 +63,22 @@ export default function Dashboard() {
       try {
         const [tripsRes, citiesRes] = await Promise.all([
           tripsApi.getAll({ limit: 6 }),
-          citiesApi.getPopular(12)
+          citiesApi.getPopular(14),
         ])
         setTrips(tripsRes.data)
         setCities(citiesRes.data)
-      } catch (error) {
-        console.error('Failed to fetch dashboard data', error)
-      } finally {
-        setIsLoading(false)
-      }
+      } catch { } finally { setIsLoading(false) }
     }
     fetchData()
   }, [])
 
-  // Weather widget
   useEffect(() => {
-    const cityName = user?.city || 'New York'
-    weatherApi.getWeather(cityName)
-      .then(res => setWeather(res.data))
-      .catch(() => {})
+    const cityName = user?.city || 'London'
+    weatherApi.getWeather(cityName).then(res => setWeather(res.data)).catch(() => {})
   }, [user])
 
-  // Auto-rotate hero carousel
   useEffect(() => {
-    const timer = setInterval(() => setHeroIndex(i => (i + 1) % heroSlides.length), 5000)
+    const timer = setInterval(() => setHeroIndex(i => (i + 1) % HERO_SLIDES.length), 5000)
     return () => clearInterval(timer)
   }, [])
 
@@ -80,133 +92,137 @@ export default function Dashboard() {
     return new Date(b.startDate) - new Date(a.startDate)
   })
 
-  const slide = heroSlides[heroIndex]
+  const slide = HERO_SLIDES[heroIndex]
+  const upcomingCount = trips.filter(t => new Date(t.startDate) > new Date()).length
+  const countries = [...new Set(trips.flatMap(t => t.stops?.map(s => s.city?.country) || []))].length
 
   return (
     <div className="space-y-8">
       {/* Hero Carousel */}
-      <div className="relative h-72 md:h-80 rounded-2xl overflow-hidden group">
-        {heroSlides.map((s, i) => (
-          <div
-            key={i}
-            className={`absolute inset-0 transition-opacity duration-1000 ${i === heroIndex ? 'opacity-100' : 'opacity-0'}`}
-          >
+      <div className="relative h-72 md:h-80 rounded-2xl overflow-hidden group cursor-pointer shadow-2xl">
+        {HERO_SLIDES.map((s, i) => (
+          <div key={i} className={`absolute inset-0 transition-all duration-1000 ${i === heroIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
             <img src={s.image} alt="" className="w-full h-full object-cover" loading="lazy" />
-            <div className={`absolute inset-0 bg-gradient-to-r ${s.gradient}`} />
           </div>
         ))}
-        <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-12">
-          <p className="text-white/70 text-sm font-medium tracking-wider uppercase mb-2 animate-fade-in">
-            ✈️ Traveloop
-          </p>
-          <h1 className="font-display text-3xl md:text-5xl font-bold text-white mb-2 transition-all">
-            {slide.title}
-          </h1>
-          <p className="text-white/80 text-lg mb-6">{slide.subtitle}</p>
-          <Link to="/trips/new">
-            <Button className="gap-2 shadow-lg">
-              <Plus size={18} /> Plan a Trip
-            </Button>
-          </Link>
+        <div className={`absolute inset-0 bg-gradient-to-r ${slide.gradient}`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-dark/80 via-dark/10 to-transparent" />
+
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col justify-end pb-8 px-8 md:px-10">
+          <div key={heroIndex} className="animate-fade-up">
+            <p className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-2 flex items-center gap-2">
+              <Globe size={12} /> Traveloop · Explore the World
+            </p>
+            <h1 className="font-display text-3xl md:text-5xl font-bold text-white leading-tight mb-1">
+              {slide.title}
+            </h1>
+            <p className="text-white/70 text-base mb-5">{slide.subtitle}</p>
+            <Link to="/trips/new">
+              <Button className="gap-2 shadow-xl shadow-primary/30">
+                <Plus size={17} /> Plan a Trip
+              </Button>
+            </Link>
+          </div>
         </div>
-        {/* Carousel controls */}
-        <button onClick={() => setHeroIndex(i => (i - 1 + heroSlides.length) % heroSlides.length)} className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 bg-black/30 hover:bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+
+        {/* Controls */}
+        <button onClick={() => setHeroIndex(i => (i - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-black/30 hover:bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
           <ChevronLeft size={20} />
         </button>
-        <button onClick={() => setHeroIndex(i => (i + 1) % heroSlides.length)} className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 bg-black/30 hover:bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={() => setHeroIndex(i => (i + 1) % HERO_SLIDES.length)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-black/30 hover:bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
           <ChevronRight size={20} />
         </button>
-        {/* Dots */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {heroSlides.map((_, i) => (
-            <button key={i} onClick={() => setHeroIndex(i)} className={`h-2 rounded-full transition-all duration-300 ${i === heroIndex ? 'w-8 bg-white' : 'w-2 bg-white/50'}`} />
+        <div className="absolute bottom-4 right-6 z-20 flex gap-1.5">
+          {HERO_SLIDES.map((_, i) => (
+            <button key={i} onClick={() => setHeroIndex(i)}
+              className={`h-1.5 rounded-full transition-all duration-500 ${i === heroIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`} />
           ))}
         </div>
       </div>
 
-      {/* Quick Stats + Weather */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="text-center">
-          <div className="text-3xl mb-1">🗺️</div>
-          <p className="text-2xl font-bold text-white">{trips.length}</p>
-          <p className="text-xs text-muted">Total Trips</p>
-        </Card>
-        <Card className="text-center">
-          <div className="text-3xl mb-1">✈️</div>
-          <p className="text-2xl font-bold text-white">
-            {trips.filter(t => new Date(t.startDate) > new Date()).length}
-          </p>
-          <p className="text-xs text-muted">Upcoming</p>
-        </Card>
-        <Card className="text-center">
-          <div className="text-3xl mb-1">🌍</div>
-          <p className="text-2xl font-bold text-white">
-            {[...new Set(trips.flatMap(t => t.stops?.map(s => s.city?.country) || []))].length}
-          </p>
-          <p className="text-xs text-muted">Countries</p>
-        </Card>
-        {/* Weather Widget */}
-        <Card className="text-center">
-          {weather ? (
-            <>
-              <div className="text-3xl mb-1">{weather.temp > 25 ? '☀️' : weather.temp > 15 ? '⛅' : '🌧️'}</div>
-              <p className="text-2xl font-bold text-white">{weather.temp}°C</p>
-              <p className="text-xs text-muted truncate">{weather.city || user?.city || 'Weather'}</p>
-            </>
-          ) : (
-            <>
-              <div className="text-3xl mb-1">🌤️</div>
-              <p className="text-2xl font-bold text-white">--</p>
-              <p className="text-xs text-muted">Weather</p>
-            </>
-          )}
-        </Card>
+        {[
+          {
+            icon: '🗺️', value: trips.length, label: 'Total Trips',
+            color: 'from-emerald-500/15 to-teal-500/5', accent: 'text-emerald-400'
+          },
+          {
+            icon: '✈️', value: upcomingCount, label: 'Upcoming',
+            color: 'from-blue-500/15 to-indigo-500/5', accent: 'text-blue-400'
+          },
+          {
+            icon: '🌍', value: countries, label: 'Countries',
+            color: 'from-amber-500/15 to-orange-500/5', accent: 'text-amber-400'
+          },
+          weather ? {
+            icon: weather.temp > 25 ? '☀️' : weather.temp > 15 ? '⛅' : '🌧️',
+            value: `${weather.temp}°C`,
+            label: weather.city || user?.city || 'Weather',
+            color: 'from-cyan-500/15 to-sky-500/5', accent: 'text-cyan-400'
+          } : {
+            icon: '🌤️', value: '--°C', label: 'Your City',
+            color: 'from-cyan-500/15 to-sky-500/5', accent: 'text-cyan-400'
+          }
+        ].map((s, i) => (
+          <Card key={i} className={`bg-gradient-to-br ${s.color} text-center py-3 border-border/50`}>
+            <div className="text-3xl mb-1">{s.icon}</div>
+            <p className={`text-2xl font-bold ${s.accent}`}>{s.value}</p>
+            <p className="text-xs text-muted mt-0.5 truncate px-2">{s.label}</p>
+          </Card>
+        ))}
       </div>
 
-      {/* Top Regional Selections */}
+      {/* Explore by Region */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <CardTitle className="flex items-center gap-2">
-            <Globe size={20} className="text-primary" /> Explore by Region
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Globe size={18} className="text-primary-light" /> Explore by Region
           </CardTitle>
+          <Link to="/explore" className="text-primary-light text-sm hover:underline flex items-center gap-1">
+            All <ChevronRight size={14} />
+          </Link>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4">
-          <button
-            onClick={() => setSelectedRegion(null)}
-            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${!selectedRegion ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'bg-surface text-muted hover:text-white'}`}
-          >
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+          <button onClick={() => setSelectedRegion(null)}
+            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap font-medium transition-all ${!selectedRegion ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-surface text-muted hover:text-white border border-border'}`}>
             🌐 All
           </button>
-          {regions.map(r => (
-            <button
-              key={r.name}
-              onClick={() => setSelectedRegion(r.name)}
-              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${selectedRegion === r.name ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'bg-surface text-muted hover:text-white'}`}
-            >
+          {REGIONS.map(r => (
+            <button key={r.name} onClick={() => setSelectedRegion(selectedRegion === r.name ? null : r.name)}
+              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap font-medium transition-all ${selectedRegion === r.name ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-surface text-muted hover:text-white border border-border'}`}>
               {r.emoji} {r.name}
             </button>
           ))}
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
+
+        <div className="flex gap-4 overflow-x-auto pb-4 mt-3 -mx-1 px-1 no-scrollbar">
           {filteredCities.map(city => (
-            <Link key={city.id} to={`/explore?city=${city.id}`} className="flex-shrink-0 w-44 group">
-              <div className="relative h-36 rounded-xl overflow-hidden mb-2">
+            <Link key={city.id} to={`/explore?city=${city.id}`} className="flex-shrink-0 w-48 group">
+              <div className="relative h-40 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all">
                 <img
                   src={city.imageUrl || `https://images.unsplash.com/400x300/?${city.name}`}
                   alt={city.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div className="absolute bottom-2 left-3 right-3">
-                  <p className="text-white font-semibold text-sm">{city.name}</p>
-                  <p className="text-white/60 text-xs">{city.country}</p>
-                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-dark/90 via-dark/20 to-transparent" />
                 {city.costIndex && (
-                  <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                    <span className="text-xs text-white">{'$'.repeat(Math.round(Number(city.costIndex)))}</span>
+                  <div className="absolute top-2.5 right-2.5 glass px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-white font-medium">{'$'.repeat(Math.round(Number(city.costIndex)))}</span>
                   </div>
                 )}
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white font-bold text-sm leading-tight">{city.name}</p>
+                  <p className="text-white/60 text-xs">{city.country}</p>
+                </div>
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-primary/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-xs font-semibold bg-primary px-3 py-1 rounded-full shadow">Explore →</span>
+                </div>
               </div>
             </Link>
           ))}
@@ -219,21 +235,20 @@ export default function Dashboard() {
       {/* Your Trips */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <CardTitle>Your Trips</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp size={18} className="text-secondary" /> Your Trips
+          </CardTitle>
           <div className="flex items-center gap-3">
-            <div className="flex gap-1">
+            <div className="flex gap-1 p-1 bg-surface rounded-full">
               {['date', 'name', 'budget'].map(s => (
-                <button
-                  key={s}
-                  onClick={() => setSortBy(s)}
-                  className={`px-3 py-1 rounded-full text-xs capitalize transition-colors ${sortBy === s ? 'bg-primary text-white' : 'bg-surface text-muted hover:text-white'}`}
-                >
+                <button key={s} onClick={() => setSortBy(s)}
+                  className={`px-3 py-1 rounded-full text-xs capitalize font-medium transition-all ${sortBy === s ? 'bg-primary text-white shadow' : 'text-muted hover:text-white'}`}>
                   {s}
                 </button>
               ))}
             </div>
-            <Link to="/trips" className="text-primary text-sm flex items-center gap-1 hover:underline">
-              View all <ChevronRight size={16} />
+            <Link to="/trips" className="text-primary-light text-sm flex items-center gap-0.5 hover:underline">
+              View all <ChevronRight size={14} />
             </Link>
           </div>
         </div>
@@ -243,45 +258,56 @@ export default function Dashboard() {
             {[1, 2, 3].map(i => <TripCardSkeleton key={i} />)}
           </div>
         ) : sortedTrips.length === 0 ? (
-          <Card className="text-center py-12">
+          <Card className="text-center py-14 bg-gradient-to-br from-primary/5 to-transparent">
             <div className="text-5xl mb-4">🧳</div>
-            <p className="text-muted mb-4">No trips yet. Start your first adventure!</p>
+            <p className="text-white font-semibold text-lg mb-2">No trips yet</p>
+            <p className="text-muted mb-5 text-sm">Start your first adventure and build memories that last</p>
             <Link to="/trips/new">
-              <Button>Create Trip</Button>
+              <Button className="gap-2">
+                <Zap size={16} /> Create your first trip
+              </Button>
             </Link>
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sortedTrips.map(trip => (
-              <Link key={trip.id} to={`/trips/${trip.id}`}>
-                <Card hover className="overflow-hidden h-full">
-                  <div className="h-32 -mx-4 -mt-4 mb-4 bg-gradient-to-r from-primary/20 to-secondary/20 relative">
-                    {trip.coverPhotoUrl && (
-                      <img src={trip.coverPhotoUrl} alt={trip.title} className="w-full h-full object-cover" />
-                    )}
-                    <div className="absolute top-2 right-2">
+              <Link key={trip.id} to={`/trips/${trip.id}`} className="group">
+                <Card hover className="overflow-hidden h-full p-0">
+                  {/* Cover */}
+                  <div className="h-36 relative overflow-hidden">
+                    {trip.coverPhotoUrl
+                      ? <img src={trip.coverPhotoUrl} alt={trip.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      : <div className="w-full h-full bg-gradient-to-br from-primary/40 via-primary/20 to-secondary/20" />
+                    }
+                    <div className="absolute inset-0 bg-gradient-to-t from-dark/60 to-transparent" />
+                    <div className="absolute top-2.5 right-2.5">
                       <Badge variant={trip.status}>{trip.status}</Badge>
                     </div>
+                    {trip.stops?.length > 0 && (
+                      <div className="absolute bottom-2 left-3 right-3 flex items-center gap-1.5 overflow-hidden">
+                        {trip.stops.slice(0, 3).map((stop, i) => (
+                          <span key={stop.id} className="flex items-center gap-0.5 text-white/80 text-xs">
+                            {i > 0 && <ChevronRight size={10} className="text-white/40 flex-shrink-0" />}
+                            <MapPin size={10} className="flex-shrink-0" />
+                            {stop.city?.name}
+                          </span>
+                        ))}
+                        {trip.stops.length > 3 && <span className="text-white/50 text-xs">+{trip.stops.length - 3}</span>}
+                      </div>
+                    )}
                   </div>
-                  <h3 className="font-semibold text-white mb-1 truncate">{trip.title}</h3>
-                  <p className="text-sm text-muted mb-2">
-                    {format(new Date(trip.startDate), 'MMM d')} - {format(new Date(trip.endDate), 'MMM d, yyyy')}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {trip.stops?.slice(0, 2).map(stop => (
-                        <span key={stop.id} className="text-xs text-muted flex items-center gap-1">
-                          <MapPin size={10} /> {stop.city?.name}
-                        </span>
-                      ))}
-                      {trip.stops?.length > 2 && (
-                        <span className="text-xs text-muted">+{trip.stops.length - 2}</span>
-                      )}
-                    </div>
+
+                  <div className="p-4">
+                    <h3 className="font-bold text-white mb-1 truncate">{trip.title}</h3>
+                    <p className="text-xs text-muted mb-3">
+                      {format(new Date(trip.startDate), 'MMM d')} – {format(new Date(trip.endDate), 'MMM d, yyyy')}
+                    </p>
+
                     {trip.totalBudget > 0 && (
-                      <span className="text-xs text-secondary font-medium">
-                        ${Number(trip.totalBudget).toLocaleString()}
-                      </span>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-muted">Budget</span>
+                        <span className="text-xs font-bold text-secondary">${Number(trip.totalBudget).toLocaleString()}</span>
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -294,7 +320,7 @@ export default function Dashboard() {
       {/* FAB */}
       <Link
         to="/trips/new"
-        className="fixed bottom-24 right-6 lg:bottom-8 lg:right-8 w-14 h-14 bg-primary hover:bg-primary-light rounded-full shadow-lg shadow-primary/25 flex items-center justify-center text-white transition-all hover:scale-110 z-30"
+        className="fixed bottom-24 right-5 lg:bottom-8 lg:right-8 w-14 h-14 bg-gradient-to-br from-primary to-primary-light rounded-full shadow-xl shadow-primary/40 flex items-center justify-center text-white transition-all hover:scale-110 z-30 glow-primary"
       >
         <Plus size={24} />
       </Link>
