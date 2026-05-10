@@ -73,4 +73,20 @@ export const useAuthStore = create((set, get) => ({
       user: { ...state.user, ...updates }
     }))
   },
+
+  // For OAuth callback - set tokens directly
+  setTokens: (accessToken, refreshToken) => {
+    localStorage.setItem('accessToken', accessToken)
+    localStorage.setItem('refreshToken', refreshToken)
+    localStorage.setItem('rememberMe', 'true')
+  },
+
+  setUser: (user) => {
+    set({ user, isAuthenticated: true, isLoading: false })
+  },
+
+  // Get current access token
+  get accessToken() {
+    return getToken('accessToken')
+  },
 }))

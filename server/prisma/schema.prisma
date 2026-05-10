@@ -49,17 +49,35 @@ enum PackingCategory {
   misc
 }
 
+enum DocumentType {
+  passport
+  visa
+  ticket
+  hotel_confirmation
+  insurance
+  other
+}
+
+enum CollaboratorRole {
+  viewer
+  editor
+  admin
+}
+
 model User {
   id              String    @id @default(uuid())
   firstName       String    @map("first_name") @db.VarChar(100)
   lastName        String    @map("last_name") @db.VarChar(100)
   email           String    @unique @db.VarChar(255)
-  passwordHash    String    @map("password_hash") @db.VarChar(255)
+  passwordHash    String?   @map("password_hash") @db.VarChar(255)
+  username        String?   @unique @db.VarChar(50)
   phone           String?   @db.VarChar(20)
   city            String?   @db.VarChar(100)
   country         String?   @db.VarChar(100)
   bio             String?
   avatarUrl       String?   @map("avatar_url")
+  googleId        String?   @unique @map("google_id")
+  authProvider    String    @default("local") @map("auth_provider") @db.VarChar(20)
   role            UserRole  @default(user)
   isActive        Boolean   @default(true) @map("is_active")
   isPublicProfile Boolean   @default(true) @map("is_public_profile")
@@ -72,6 +90,9 @@ model User {
   postLikes          PostLike[]
   postComments       PostComment[]
   savedDestinations  SavedDestination[]
+  tripDocuments      TripDocument[]
+  tripCollaborators  TripCollaborator[]
+  tripEditHistory    TripEditHistory[]
 
   @@map("users")
 }
@@ -98,6 +119,9 @@ model Trip {
   packingItems   PackingItem[]
   notes          TripNote[]
   communityPosts CommunityPost[]
+  documents      TripDocument[]
+  collaborators  TripCollaborator[]
+  editHistory    TripEditHistory[]
 
   @@index([userId])
   @@index([status])
@@ -297,4 +321,55 @@ model ChecklistTemplate {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("checklist_templates")
+}
+
+model TripDocument {
+  id           String       @id @default(uuid())
+  tripId       String       @map("trip_id")
+  userId       String       @map("user_id")
+  type         DocumentType
+  name         String       @db.VarChar(255)
+  url          String
+  cloudinaryId String?      @map("cloudinary_id")
+  size         Int          @default(0)
+  mimeType     String?      @map("mime_type") @db.VarChar(100)
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("trip_documents")
+}
+
+model TripCollaborator {
+  id         String           @id @default(uuid())
+  tripId     String           @map("trip_id")
+  userId     String           @map("user_id")
+  role       CollaboratorRole @default(viewer)
+  invitedAt  DateTime         @default(now()) @map("invited_at")
+  acceptedAt DateTime?        @map("accepted_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@map("trip_collaborators")
+}
+
+model TripEditHistory {
+  id        String   @id @default(uuid())
+  tripId    String   @map("trip_id")
+  userId    String   @map("user_id")
+  action    String   @db.VarChar(50)
+  field     String?  @db.VarChar(100)
+  oldValue  Json?    @map("old_value")
+  newValue  Json?    @map("new_value")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("trip_edit_history")
 }

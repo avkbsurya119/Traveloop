@@ -2,6 +2,7 @@ import client from './client'
 
 export const usersApi = {
   getProfile: (id) => client.get(`/users/${id}`),
+  getByUsername: (username) => client.get(`/users/username/${username}`),
   updateProfile: (id, data) => client.put(`/users/${id}`, data),
   deleteAccount: (id) => client.delete(`/users/${id}`),
   uploadAvatar: (id, avatar) => client.post(`/users/${id}/avatar`, { avatar }),

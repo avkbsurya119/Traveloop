@@ -12,6 +12,8 @@ import {
 } from '../utils/loginLimiter.js';
 import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/email.js';
 import { rateLimit } from 'express-rate-limit';
+import passport from '../config/passport.js';
+import { validate, registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../middleware/validators.js';
 
 const authLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -50,15 +52,9 @@ router.post('/check-email', async (req, res) => {
 });
 
 // ─── Register ────────────────────────────────────────────────────────────────
-router.post('/register', registerLimiter, async (req, res, next) => {
+router.post('/register', registerLimiter, validate(registerSchema), async (req, res, next) => {
   try {
     const { email, password, firstName, lastName, phone, city, country, bio } = req.body;
-
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(409).json({ error: 'Email already registered' });
@@ -204,5 +200,22 @@ router.get('/me', authenticate, async (req, res, next) => {
 
 // ─── Logout ──────────────────────────────────────────────────────────────────
 router.post('/logout', (req, res) => { res.json({ message: 'Logged out' }); });
+
+// ─── Google OAuth ────────────────────────────────────────────────────────────
+router.get('/google', passport.authenticate('google', {
+  scope: ['profile', 'email'],
+  session: false
+}));
+
+router.get('/google/callback', passport.authenticate('google', {
+  session: false,
+  failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed`
+}), (req, res) => {
+  const tokens = generateTokens(req.user.id);
+  const redirectUrl = new URL('/auth/callback', process.env.FRONTEND_URL || 'http://localhost:5173');
+  redirectUrl.searchParams.set('accessToken', tokens.accessToken);
+  redirectUrl.searchParams.set('refreshToken', tokens.refreshToken);
+  res.redirect(redirectUrl.toString());
+});
 
 export default router;

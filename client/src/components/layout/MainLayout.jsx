@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { Navbar } from './Navbar'
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
+import OfflineIndicator from '../common/OfflineIndicator'
 import { useAuthStore } from '../../store/authStore'
 
 export default function MainLayout() {
@@ -30,6 +31,7 @@ export default function MainLayout() {
         </main>
       </div>
       <BottomNav />
+      <OfflineIndicator />
     </div>
   )
 }

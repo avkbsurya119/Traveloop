@@ -2,10 +2,56 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import prisma from '../config/db.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
+import {
+  validate,
+  createTripSchema,
+  updateTripSchema,
+  createStopSchema,
+  updateStopSchema,
+  createItineraryItemSchema,
+  updateItineraryItemSchema,
+  createExpenseSchema,
+  updateExpenseSchema,
+  checkItineraryOverlap,
+  validateStopWithinTrip,
+  validateItemWithinStop
+} from '../middleware/validators.js';
 
 const router = Router();
 
-// Get all trips for user
+/**
+ * @swagger
+ * /trips:
+ *   get:
+ *     summary: Get all trips for authenticated user
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [draft, planned, ongoing, completed]
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [date_asc, date_desc]
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *     responses:
+ *       200:
+ *         description: List of trips
+ */
 router.get('/', authenticate, async (req, res, next) => {
   try {
     const { status, sort = 'date_desc', limit = 20, offset = 0 } = req.query;
@@ -37,10 +83,56 @@ router.get('/', authenticate, async (req, res, next) => {
   }
 });
 
-// Create trip
-router.post('/', authenticate, async (req, res, next) => {
+/**
+ * @swagger
+ * /trips:
+ *   post:
+ *     summary: Create a new trip
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - startDate
+ *               - endDate
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *               totalBudget:
+ *                 type: number
+ *               currency:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Trip created
+ */
+router.post('/', authenticate, validate(createTripSchema), async (req, res, next) => {
   try {
     const { title, description, startDate, endDate, totalBudget, currency, stops } = req.body;
+
+    // Validate stops are within trip dates if provided
+    if (stops?.length > 0) {
+      for (const stop of stops) {
+        const validation = validateStopWithinTrip(startDate, endDate, stop.arrivalDate, stop.departureDate);
+        if (!validation.valid) {
+          return res.status(400).json({ error: validation.message, details: [{ field: 'stops', message: validation.message }] });
+        }
+      }
+    }
 
     const trip = await prisma.trip.create({
       data: {
@@ -242,9 +334,22 @@ router.get('/:id/stops', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/:id/stops', authenticate, async (req, res, next) => {
+router.post('/:id/stops', authenticate, validate(createStopSchema), async (req, res, next) => {
   try {
     const { cityId, arrivalDate, departureDate, notes } = req.body;
+
+    // Validate stop is within trip dates
+    const trip = await prisma.trip.findUnique({
+      where: { id: req.params.id },
+      select: { startDate: true, endDate: true, userId: true }
+    });
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+    if (trip.userId !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    const validation = validateStopWithinTrip(trip.startDate, trip.endDate, arrivalDate, departureDate);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.message });
+    }
 
     const count = await prisma.tripStop.count({ where: { tripId: req.params.id } });
 
@@ -339,9 +444,32 @@ router.get('/:id/itinerary', optionalAuth, async (req, res, next) => {
   }
 });
 
-router.post('/:id/itinerary-items', authenticate, async (req, res, next) => {
+router.post('/:id/itinerary-items', authenticate, validate(createItineraryItemSchema), async (req, res, next) => {
   try {
-    const { stopId, activityId, customTitle, date, startTime, endTime, cost, notes } = req.body;
+    const { stopId, activityId, customTitle, date, startTime, endTime, cost, notes, sectionType } = req.body;
+
+    // Validate item date is within stop dates
+    const stop = await prisma.tripStop.findUnique({
+      where: { id: stopId },
+      select: { arrivalDate: true, departureDate: true }
+    });
+    if (!stop) return res.status(404).json({ error: 'Stop not found' });
+
+    const dateValidation = validateItemWithinStop(stop.arrivalDate, stop.departureDate, date);
+    if (!dateValidation.valid) {
+      return res.status(400).json({ error: dateValidation.message });
+    }
+
+    // Check for time overlap if times provided
+    if (startTime && endTime) {
+      const overlap = await checkItineraryOverlap(prisma, stopId, date, startTime, endTime);
+      if (overlap.hasOverlap) {
+        return res.status(409).json({
+          error: 'Time conflict with existing item',
+          conflictingItem: overlap.conflictingItem
+        });
+      }
+    }
 
     const count = await prisma.itineraryItem.count({ where: { stopId } });
 
@@ -366,9 +494,31 @@ router.post('/:id/itinerary-items', authenticate, async (req, res, next) => {
   }
 });
 
-router.put('/:id/itinerary-items/:itemId', authenticate, async (req, res, next) => {
+router.put('/:id/itinerary-items/:itemId', authenticate, validate(updateItineraryItemSchema), async (req, res, next) => {
   try {
-    const { customTitle, date, startTime, endTime, cost, notes } = req.body;
+    const { customTitle, date, startTime, endTime, cost, notes, sectionType } = req.body;
+
+    // Get current item for overlap checking
+    const currentItem = await prisma.itineraryItem.findUnique({
+      where: { id: req.params.itemId },
+      include: { stop: { select: { arrivalDate: true, departureDate: true } } }
+    });
+    if (!currentItem) return res.status(404).json({ error: 'Item not found' });
+
+    // Check time overlap if times are being updated
+    const checkDate = date || currentItem.date;
+    const checkStartTime = startTime || (currentItem.startTime ? currentItem.startTime.toISOString().substring(11, 16) : null);
+    const checkEndTime = endTime || (currentItem.endTime ? currentItem.endTime.toISOString().substring(11, 16) : null);
+
+    if (checkStartTime && checkEndTime) {
+      const overlap = await checkItineraryOverlap(prisma, currentItem.stopId, checkDate, checkStartTime, checkEndTime, req.params.itemId);
+      if (overlap.hasOverlap) {
+        return res.status(409).json({
+          error: 'Time conflict with existing item',
+          conflictingItem: overlap.conflictingItem
+        });
+      }
+    }
 
     const item = await prisma.itineraryItem.update({
       where: { id: req.params.itemId },
@@ -434,7 +584,7 @@ router.get('/:id/expenses', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/:id/expenses', authenticate, async (req, res, next) => {
+router.post('/:id/expenses', authenticate, validate(createExpenseSchema), async (req, res, next) => {
   try {
     const { stopId, category, description, amount, currency, date, receiptUrl } = req.body;
 

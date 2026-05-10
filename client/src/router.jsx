@@ -27,6 +27,8 @@ import Landing from './pages/Landing'
 import AboutUs from './pages/AboutUs'
 import Contact from './pages/Contact'
 import TravelPackages from './pages/TravelPackages'
+import PublicProfile from './pages/PublicProfile'
+import AuthCallback from './pages/AuthCallback'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
@@ -54,6 +56,12 @@ export default function AppRouter() {
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       </Route>
+
+      {/* OAuth callback */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+
+      {/* Public profile route */}
+      <Route path="/u/:username" element={<PublicProfile />} />
 
       {/* Protected routes */}
       <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>

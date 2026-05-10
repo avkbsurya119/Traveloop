@@ -4,6 +4,24 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
+// Get user by username (public profile)
+router.get('/username/:username', async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { username: req.params.username },
+      select: {
+        id: true, firstName: true, lastName: true, username: true, city: true, country: true, bio: true,
+        avatarUrl: true, createdAt: true, isPublicProfile: true,
+        trips: { where: { isPublic: true }, select: { id: true, title: true, coverPhotoUrl: true, startDate: true, endDate: true, status: true }, take: 6 },
+        _count: { select: { trips: true, communityPosts: true } }
+      }
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user.isPublicProfile) return res.status(403).json({ error: 'This profile is private' });
+    res.json(user);
+  } catch (error) { next(error); }
+});
+
 // Get user profile (public or private)
 router.get('/:id', async (req, res, next) => {
   try {
@@ -58,11 +76,20 @@ router.put('/:id', authenticate, async (req, res, next) => {
     if (req.user.id !== req.params.id && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized' });
     }
-    const { firstName, lastName, phone, city, country, bio, avatarUrl } = req.body;
+    const { firstName, lastName, phone, city, country, bio, avatarUrl, username } = req.body;
+
+    // Check username uniqueness if provided
+    if (username) {
+      const existing = await prisma.user.findFirst({
+        where: { username, NOT: { id: req.params.id } }
+      });
+      if (existing) return res.status(409).json({ error: 'Username already taken' });
+    }
+
     const user = await prisma.user.update({
       where: { id: req.params.id },
-      data: { firstName, lastName, phone, city, country, bio, avatarUrl },
-      select: { id: true, email: true, firstName: true, lastName: true, phone: true, city: true, country: true, bio: true, avatarUrl: true }
+      data: { firstName, lastName, phone, city, country, bio, avatarUrl, username: username || undefined },
+      select: { id: true, email: true, firstName: true, lastName: true, username: true, phone: true, city: true, country: true, bio: true, avatarUrl: true }
     });
     res.json(user);
   } catch (error) { next(error); }

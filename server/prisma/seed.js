@@ -12,6 +12,9 @@ async function main() {
   await prisma.postLike.deleteMany();
   await prisma.communityPost.deleteMany();
   await prisma.savedDestination.deleteMany();
+  await prisma.tripEditHistory.deleteMany();
+  await prisma.tripCollaborator.deleteMany();
+  await prisma.tripDocument.deleteMany();
   await prisma.tripNote.deleteMany();
   await prisma.packingItem.deleteMany();
   await prisma.expense.deleteMany();
@@ -27,11 +30,14 @@ async function main() {
   const pw = await bcrypt.hash('Admin123!', 12);
   const upw = await bcrypt.hash('User123!', 12);
 
-  const admin = await prisma.user.create({ data: { email:'admin@traveloop.app', passwordHash:pw, firstName:'Admin', lastName:'User', role:'admin', city:'San Francisco', country:'USA', bio:'Traveloop administrator' }});
-  const user1 = await prisma.user.create({ data: { email:'john@example.com', passwordHash:upw, firstName:'John', lastName:'Traveler', city:'New York', country:'USA', bio:'Adventure seeker and food lover. 🌍' }});
-  const user2 = await prisma.user.create({ data: { email:'sarah@example.com', passwordHash:upw, firstName:'Sarah', lastName:'Explorer', city:'London', country:'UK', bio:'Solo traveler and photographer. 📸' }});
-  const user3 = await prisma.user.create({ data: { email:'mike@example.com', passwordHash:upw, firstName:'Mike', lastName:'Wanderer', city:'Berlin', country:'Germany', bio:'Digital nomad exploring the world.' }});
-  console.log('Created users');
+  const admin = await prisma.user.create({ data: { email:'admin@traveloop.app', passwordHash:pw, firstName:'Admin', lastName:'User', role:'admin', city:'San Francisco', country:'USA', bio:'Traveloop administrator', username:'admin' }});
+  const user1 = await prisma.user.create({ data: { email:'john@example.com', passwordHash:upw, firstName:'John', lastName:'Traveler', city:'New York', country:'USA', bio:'Adventure seeker and food lover. 🌍', username:'johntravels' }});
+  const user2 = await prisma.user.create({ data: { email:'sarah@example.com', passwordHash:upw, firstName:'Sarah', lastName:'Explorer', city:'London', country:'UK', bio:'Solo traveler and photographer. 📸', username:'sarahexplores' }});
+  const user3 = await prisma.user.create({ data: { email:'mike@example.com', passwordHash:upw, firstName:'Mike', lastName:'Wanderer', city:'Berlin', country:'Germany', bio:'Digital nomad exploring the world.', username:'mikewanders' }});
+  const user4 = await prisma.user.create({ data: { email:'emma@example.com', passwordHash:upw, firstName:'Emma', lastName:'Adventurer', city:'Sydney', country:'Australia', bio:'Beach lover and scuba diver. 🏊‍♀️', username:'emmaadventures' }});
+  const user5 = await prisma.user.create({ data: { email:'carlos@example.com', passwordHash:upw, firstName:'Carlos', lastName:'Voyager', city:'Madrid', country:'Spain', bio:'Foodie exploring world cuisines. 🍴', username:'carlosvoyages' }});
+  const user6 = await prisma.user.create({ data: { email:'yuki@example.com', passwordHash:upw, firstName:'Yuki', lastName:'Nomad', city:'Tokyo', country:'Japan', bio:'Remote worker traveling Asia. 💻', username:'yukinomad' }});
+  console.log('Created 7 users');
 
   const cityData = [
     { name:'Tokyo', country:'Japan', region:'Asia', latitude:35.6762, longitude:139.6503, costIndex:4.2, popularity:95, imageUrl:'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800', description:'Ultra-modern meets traditional' },
@@ -116,20 +122,147 @@ async function main() {
       { cityId:rome.id, arrivalDate:d(now,28), departureDate:d(now,35), orderIndex:2 },
     ]}
   }});
-  console.log('Created 3 demo trips');
 
-  // Expenses
-  await prisma.expense.createMany({ data:[
-    { tripId:trip2.id, category:'flight', description:'Round trip flights', amount:800, date:d(now,-60) },
-    { tripId:trip2.id, category:'hotel', description:'Beach villa 10 nights', amount:600, date:d(now,-60) },
-    { tripId:trip2.id, category:'food', description:'Local restaurants', amount:250, date:d(now,-58) },
-    { tripId:trip2.id, category:'activity', description:'Surf lessons', amount:80, date:d(now,-55) },
-    { tripId:trip2.id, category:'transport', description:'Scooter rental', amount:70, date:d(now,-59) },
-    { tripId:trip1.id, category:'flight', description:'Round trip to Tokyo', amount:1200, date:d(now,-3) },
-    { tripId:trip1.id, category:'hotel', description:'Shinjuku hotel', amount:500, date:d(now,-3) },
-    { tripId:trip1.id, category:'food', description:'Ramen, sushi, izakaya', amount:150, date:d(now,-2) },
+  // Draft trip
+  const london=cities.find(c=>c.name==='London'), amsterdam=cities.find(c=>c.name==='Amsterdam');
+  const trip4 = await prisma.trip.create({ data:{
+    userId:user4.id, title:'UK & Netherlands', description:'Still planning this one...',
+    startDate:d(now,60), endDate:d(now,70), status:'draft', isPublic:false, totalBudget:3500,
+    stops:{ create:[
+      { cityId:london.id, arrivalDate:d(now,60), departureDate:d(now,65), orderIndex:0 },
+      { cityId:amsterdam.id, arrivalDate:d(now,65), departureDate:d(now,70), orderIndex:1 },
+    ]}
+  }});
+
+  // Another completed trip
+  const singapore=cities.find(c=>c.name==='Singapore');
+  const trip5 = await prisma.trip.create({ data:{
+    userId:user5.id, title:'Singapore Food Safari', description:'4 days of non-stop eating!',
+    startDate:d(now,-30), endDate:d(now,-26), status:'completed', isPublic:true, totalBudget:1500,
+    shareToken: crypto.randomBytes(16).toString('hex'),
+    stops:{ create:[{ cityId:singapore.id, arrivalDate:d(now,-30), departureDate:d(now,-26), orderIndex:0 }] }
+  }});
+
+  // Solo trip
+  const kyoto=cities.find(c=>c.name==='Kyoto');
+  const trip6 = await prisma.trip.create({ data:{
+    userId:user6.id, title:'Kyoto Temple Hopping', description:'Finding zen in ancient Japan.',
+    startDate:d(now,-10), endDate:d(now,-5), status:'completed', isPublic:true, totalBudget:1200,
+    shareToken: crypto.randomBytes(16).toString('hex'),
+    stops:{ create:[{ cityId:kyoto.id, arrivalDate:d(now,-10), departureDate:d(now,-5), orderIndex:0 }] }
+  }});
+
+  console.log('Created 6 demo trips');
+
+  // Get stops for itinerary items
+  const trip1Stops = await prisma.tripStop.findMany({ where: { tripId: trip1.id } });
+  const trip2Stops = await prisma.tripStop.findMany({ where: { tripId: trip2.id } });
+  const trip5Stops = await prisma.tripStop.findMany({ where: { tripId: trip5.id } });
+  const trip6Stops = await prisma.tripStop.findMany({ where: { tripId: trip6.id } });
+
+  // Get activities for itinerary items
+  const tokyoActivities = await prisma.activity.findMany({ where: { cityId: tokyo.id }, take: 5 });
+  const baliActivities = await prisma.activity.findMany({ where: { cityId: bali.id }, take: 5 });
+  const singaporeActivities = await prisma.activity.findMany({ where: { cityId: singapore.id }, take: 5 });
+  const kyotoActivities = await prisma.activity.findMany({ where: { cityId: kyoto.id }, take: 5 });
+
+  // Itinerary items for Tokyo trip
+  await prisma.itineraryItem.createMany({ data: [
+    { stopId: trip1Stops[0].id, activityId: tokyoActivities[0]?.id, customTitle: 'Shibuya Crossing & Harajuku', date: d(now,-3), startTime: new Date('1970-01-01T10:00'), endTime: new Date('1970-01-01T13:00'), cost: 0, orderIndex: 0 },
+    { stopId: trip1Stops[0].id, customTitle: 'Lunch at Ichiran Ramen', date: d(now,-3), startTime: new Date('1970-01-01T13:30'), endTime: new Date('1970-01-01T14:30'), cost: 15, orderIndex: 1, sectionType: 'food' },
+    { stopId: trip1Stops[0].id, activityId: tokyoActivities[2]?.id, customTitle: 'teamLab Borderless', date: d(now,-3), startTime: new Date('1970-01-01T15:00'), endTime: new Date('1970-01-01T18:00'), cost: 30, orderIndex: 2 },
+    { stopId: trip1Stops[0].id, customTitle: 'Golden Gai Bar Hopping', date: d(now,-3), startTime: new Date('1970-01-01T20:00'), endTime: new Date('1970-01-01T23:00'), cost: 50, orderIndex: 3 },
+    { stopId: trip1Stops[0].id, customTitle: 'Tsukiji Outer Market Breakfast', date: d(now,-2), startTime: new Date('1970-01-01T07:00'), endTime: new Date('1970-01-01T09:00'), cost: 25, orderIndex: 0, sectionType: 'food' },
+    { stopId: trip1Stops[0].id, activityId: tokyoActivities[1]?.id, customTitle: 'Senso-ji Temple & Asakusa', date: d(now,-2), startTime: new Date('1970-01-01T10:00'), endTime: new Date('1970-01-01T13:00'), cost: 0, orderIndex: 1 },
+    { stopId: trip1Stops[0].id, customTitle: 'Akihabara Electronics & Anime', date: d(now,-2), startTime: new Date('1970-01-01T14:00'), endTime: new Date('1970-01-01T17:00'), cost: 100, orderIndex: 2 },
+    { stopId: trip1Stops[0].id, customTitle: 'Day trip to Mt. Fuji', date: d(now,-1), startTime: new Date('1970-01-01T06:00'), endTime: new Date('1970-01-01T18:00'), cost: 80, orderIndex: 0, sectionType: 'transit' },
   ]});
-  console.log('Added expenses');
+
+  // Itinerary items for Bali trip
+  await prisma.itineraryItem.createMany({ data: [
+    { stopId: trip2Stops[0].id, customTitle: 'Arrival & Check-in', date: d(now,-60), startTime: new Date('1970-01-01T14:00'), endTime: new Date('1970-01-01T16:00'), cost: 0, orderIndex: 0, sectionType: 'accommodation' },
+    { stopId: trip2Stops[0].id, customTitle: 'Sunset at Tanah Lot', date: d(now,-60), startTime: new Date('1970-01-01T17:00'), endTime: new Date('1970-01-01T19:00'), cost: 10, orderIndex: 1 },
+    { stopId: trip2Stops[0].id, activityId: baliActivities[3]?.id, customTitle: 'Balinese Cooking Class', date: d(now,-59), startTime: new Date('1970-01-01T09:00'), endTime: new Date('1970-01-01T13:00'), cost: 45, orderIndex: 0 },
+    { stopId: trip2Stops[0].id, customTitle: 'Tegallalang Rice Terraces', date: d(now,-59), startTime: new Date('1970-01-01T15:00'), endTime: new Date('1970-01-01T17:00'), cost: 5, orderIndex: 1 },
+    { stopId: trip2Stops[0].id, customTitle: 'Sunrise trek Mt. Batur', date: d(now,-58), startTime: new Date('1970-01-01T02:00'), endTime: new Date('1970-01-01T09:00'), cost: 60, orderIndex: 0, sectionType: 'activity' },
+    { stopId: trip2Stops[0].id, customTitle: 'Spa afternoon', date: d(now,-58), startTime: new Date('1970-01-01T14:00'), endTime: new Date('1970-01-01T17:00'), cost: 40, orderIndex: 1 },
+    { stopId: trip2Stops[0].id, activityId: baliActivities[4]?.id, customTitle: 'Surfing lesson', date: d(now,-57), startTime: new Date('1970-01-01T08:00'), endTime: new Date('1970-01-01T11:00'), cost: 35, orderIndex: 0 },
+    { stopId: trip2Stops[0].id, customTitle: 'Uluwatu Temple & Kecak Dance', date: d(now,-56), startTime: new Date('1970-01-01T16:00'), endTime: new Date('1970-01-01T20:00'), cost: 25, orderIndex: 0 },
+  ]});
+
+  // Itinerary items for Singapore trip
+  await prisma.itineraryItem.createMany({ data: [
+    { stopId: trip5Stops[0].id, customTitle: 'Hawker Center Tour', date: d(now,-30), startTime: new Date('1970-01-01T11:00'), endTime: new Date('1970-01-01T14:00'), cost: 20, orderIndex: 0, sectionType: 'food' },
+    { stopId: trip5Stops[0].id, customTitle: 'Gardens by the Bay', date: d(now,-30), startTime: new Date('1970-01-01T16:00'), endTime: new Date('1970-01-01T20:00'), cost: 35, orderIndex: 1 },
+    { stopId: trip5Stops[0].id, activityId: singaporeActivities[1]?.id, customTitle: 'Chinatown Food Tour', date: d(now,-29), startTime: new Date('1970-01-01T10:00'), endTime: new Date('1970-01-01T13:00'), cost: 55, orderIndex: 0 },
+    { stopId: trip5Stops[0].id, customTitle: 'Marina Bay Sands', date: d(now,-29), startTime: new Date('1970-01-01T18:00'), endTime: new Date('1970-01-01T22:00'), cost: 25, orderIndex: 1 },
+    { stopId: trip5Stops[0].id, customTitle: 'Little India breakfast', date: d(now,-28), startTime: new Date('1970-01-01T08:00'), endTime: new Date('1970-01-01T10:00'), cost: 10, orderIndex: 0, sectionType: 'food' },
+    { stopId: trip5Stops[0].id, customTitle: 'Sentosa Island', date: d(now,-28), startTime: new Date('1970-01-01T12:00'), endTime: new Date('1970-01-01T18:00'), cost: 50, orderIndex: 1 },
+  ]});
+
+  // Itinerary items for Kyoto trip
+  await prisma.itineraryItem.createMany({ data: [
+    { stopId: trip6Stops[0].id, customTitle: 'Fushimi Inari (early morning)', date: d(now,-10), startTime: new Date('1970-01-01T06:00'), endTime: new Date('1970-01-01T09:00'), cost: 0, orderIndex: 0 },
+    { stopId: trip6Stops[0].id, activityId: kyotoActivities[0]?.id, customTitle: 'Gion Walking Tour', date: d(now,-10), startTime: new Date('1970-01-01T14:00'), endTime: new Date('1970-01-01T17:00'), cost: 40, orderIndex: 1 },
+    { stopId: trip6Stops[0].id, customTitle: 'Arashiyama Bamboo Grove', date: d(now,-9), startTime: new Date('1970-01-01T07:00'), endTime: new Date('1970-01-01T10:00'), cost: 0, orderIndex: 0 },
+    { stopId: trip6Stops[0].id, customTitle: 'Kinkaku-ji (Golden Pavilion)', date: d(now,-9), startTime: new Date('1970-01-01T11:00'), endTime: new Date('1970-01-01T13:00'), cost: 5, orderIndex: 1 },
+    { stopId: trip6Stops[0].id, customTitle: 'Traditional Tea Ceremony', date: d(now,-9), startTime: new Date('1970-01-01T15:00'), endTime: new Date('1970-01-01T16:30'), cost: 30, orderIndex: 2 },
+    { stopId: trip6Stops[0].id, customTitle: 'Nishiki Market Food Tour', date: d(now,-8), startTime: new Date('1970-01-01T10:00'), endTime: new Date('1970-01-01T13:00'), cost: 25, orderIndex: 0, sectionType: 'food' },
+    { stopId: trip6Stops[0].id, customTitle: 'Kiyomizu-dera Temple', date: d(now,-8), startTime: new Date('1970-01-01T15:00'), endTime: new Date('1970-01-01T17:00'), cost: 4, orderIndex: 1 },
+  ]});
+
+  console.log('Created itinerary items for 4 trips');
+
+  // Expenses - expanded
+  await prisma.expense.createMany({ data:[
+    // Bali trip expenses
+    { tripId:trip2.id, category:'flight', description:'Round trip flights', amount:800, currency:'USD', date:d(now,-60) },
+    { tripId:trip2.id, category:'hotel', description:'Beach villa 10 nights', amount:600, currency:'USD', date:d(now,-60) },
+    { tripId:trip2.id, category:'food', description:'Local restaurants', amount:250, currency:'USD', date:d(now,-58) },
+    { tripId:trip2.id, category:'activity', description:'Surf lessons', amount:80, currency:'USD', date:d(now,-55) },
+    { tripId:trip2.id, category:'transport', description:'Scooter rental', amount:70, currency:'USD', date:d(now,-59) },
+    { tripId:trip2.id, category:'activity', description:'Mt. Batur sunrise trek', amount:60, currency:'USD', date:d(now,-58) },
+    { tripId:trip2.id, category:'activity', description:'Spa day', amount:40, currency:'USD', date:d(now,-57) },
+    { tripId:trip2.id, category:'shopping', description:'Souvenirs & crafts', amount:120, currency:'USD', date:d(now,-52) },
+    // Tokyo trip expenses
+    { tripId:trip1.id, category:'flight', description:'Round trip to Tokyo', amount:1200, currency:'USD', date:d(now,-3) },
+    { tripId:trip1.id, category:'hotel', description:'Shinjuku hotel', amount:500, currency:'USD', date:d(now,-3) },
+    { tripId:trip1.id, category:'food', description:'Ramen, sushi, izakaya', amount:150, currency:'JPY', date:d(now,-2) },
+    { tripId:trip1.id, category:'transport', description:'JR Pass 7 days', amount:280, currency:'USD', date:d(now,-3) },
+    { tripId:trip1.id, category:'activity', description:'teamLab Borderless', amount:30, currency:'USD', date:d(now,-3) },
+    { tripId:trip1.id, category:'shopping', description:'Electronics Akihabara', amount:200, currency:'USD', date:d(now,-2) },
+    // Singapore trip expenses
+    { tripId:trip5.id, category:'flight', description:'Round trip flights', amount:450, currency:'USD', date:d(now,-30) },
+    { tripId:trip5.id, category:'hotel', description:'Marina Bay hotel', amount:400, currency:'SGD', date:d(now,-30) },
+    { tripId:trip5.id, category:'food', description:'Hawker centers & restaurants', amount:180, currency:'SGD', date:d(now,-29) },
+    { tripId:trip5.id, category:'activity', description:'Gardens by the Bay', amount:35, currency:'SGD', date:d(now,-30) },
+    { tripId:trip5.id, category:'transport', description:'MRT & Grab rides', amount:50, currency:'SGD', date:d(now,-28) },
+    // Kyoto trip expenses
+    { tripId:trip6.id, category:'transport', description:'Shinkansen from Tokyo', amount:130, currency:'USD', date:d(now,-10) },
+    { tripId:trip6.id, category:'hotel', description:'Traditional ryokan', amount:350, currency:'USD', date:d(now,-10) },
+    { tripId:trip6.id, category:'food', description:'Kaiseki dinner', amount:80, currency:'USD', date:d(now,-9) },
+    { tripId:trip6.id, category:'activity', description:'Tea ceremony', amount:30, currency:'USD', date:d(now,-9) },
+  ]});
+  console.log('Added 24 expenses');
+
+  // Trip collaborators
+  await prisma.tripCollaborator.createMany({ data: [
+    { tripId: trip3.id, userId: user1.id, role: 'editor', acceptedAt: d(now, -1) },
+    { tripId: trip3.id, userId: user2.id, role: 'viewer', acceptedAt: d(now, -2) },
+    { tripId: trip4.id, userId: user5.id, role: 'editor' },
+  ]});
+  console.log('Added trip collaborators');
+
+  // Edit history
+  await prisma.tripEditHistory.createMany({ data: [
+    { tripId: trip3.id, userId: user3.id, action: 'create', field: 'trip', createdAt: d(now, -7) },
+    { tripId: trip3.id, userId: user3.id, action: 'update', field: 'description', createdAt: d(now, -5) },
+    { tripId: trip3.id, userId: user1.id, action: 'create', field: 'stop', createdAt: d(now, -3) },
+    { tripId: trip3.id, userId: user1.id, action: 'update', field: 'budget', createdAt: d(now, -2) },
+    { tripId: trip1.id, userId: user1.id, action: 'create', field: 'trip', createdAt: d(now, -5) },
+    { tripId: trip1.id, userId: user1.id, action: 'create', field: 'itinerary', createdAt: d(now, -4) },
+  ]});
+  console.log('Added edit history');
 
   // Packing items
   const packItems = [
@@ -145,7 +278,7 @@ async function main() {
   await prisma.packingItem.createMany({ data: packItems });
   console.log('Added packing items');
 
-  // Community posts (10+)
+  // Community posts (15+)
   const posts = await Promise.all([
     prisma.communityPost.create({ data:{ userId:user2.id, tripId:trip2.id, content:'Just got back from Bali! The rice terraces in Ubud were absolutely magical. 🌾✨ Highly recommend staying at least 3 days there.', likesCount:24, tags:['bali','ubud','nature'] }}),
     prisma.communityPost.create({ data:{ userId:user1.id, content:'Pro tip: Get a JR Pass before visiting Japan. It saves SO much money on bullet trains! 🚅', likesCount:45, tags:['japan','tips','budget'] }}),
@@ -158,17 +291,24 @@ async function main() {
     prisma.communityPost.create({ data:{ userId:user3.id, content:'Who else thinks Barcelona > Paris? The energy, the food, the architecture... La Sagrada Familia literally made me cry. 😭🏗️', likesCount:42, tags:['barcelona','architecture','debate'] }}),
     prisma.communityPost.create({ data:{ userId:user2.id, content:'One month since Bali and I\'m already planning to go back. The people, the culture, the food... it changes you. 💚', likesCount:33, tags:['bali','reflection','travel'] }}),
     prisma.communityPost.create({ data:{ userId:user1.id, content:'Budget breakdown for 7 days in Tokyo: Flights $1200, Hotel $500, Food $200, Activities $300, Transport $100. Total: ~$2300 for one person.', likesCount:67, tags:['tokyo','budget','breakdown'] }}),
+    prisma.communityPost.create({ data:{ userId:user4.id, content:'Just booked my first solo trip to London! Any advice for a first-timer? 🇬🇧', likesCount:18, tags:['london','solo','advice'] }}),
+    prisma.communityPost.create({ data:{ userId:user5.id, tripId:trip5.id, content:'Singapore hawker centers are UNREAL. Had the best chicken rice of my life at Maxwell Food Centre for just $4! 🍚', likesCount:52, tags:['singapore','food','budget'] }}),
+    prisma.communityPost.create({ data:{ userId:user6.id, tripId:trip6.id, content:'Woke up at 5am to beat the crowds at Fushimi Inari. So worth it - had the torii gates almost to myself! 🏯⛩️', likesCount:71, tags:['kyoto','temples','tips'] }}),
+    prisma.communityPost.create({ data:{ userId:user5.id, content:'Hot take: Street food > fancy restaurants every single time. Fight me. 🌮🔥', likesCount:89, tags:['food','debate','streetfood'] }}),
   ]);
   console.log(`Created ${posts.length} community posts`);
 
-  // Comments on posts
+  // Comments on posts - expanded
   await prisma.postComment.createMany({ data:[
     { postId:posts[0].id, userId:user1.id, content:'Ubud is amazing! Did you visit the Monkey Forest?' },
     { postId:posts[0].id, userId:user3.id, content:'Adding this to my bucket list!' },
+    { postId:posts[0].id, userId:user4.id, content:'How many days would you recommend for Ubud alone?' },
     { postId:posts[1].id, userId:user2.id, content:'Yes! The 7-day JR Pass is the best value.' },
     { postId:posts[1].id, userId:user3.id, content:'How far in advance should you buy it?' },
+    { postId:posts[1].id, userId:user6.id, content:'You can only buy it outside Japan! Order before you fly.' },
     { postId:posts[2].id, userId:user1.id, content:'Le Comptoir du Panthéon is incredible and not too touristy.' },
     { postId:posts[2].id, userId:user2.id, content:'Try the croissants at Du Pain et des Idées!' },
+    { postId:posts[2].id, userId:user5.id, content:'L\'As du Fallafel in Le Marais is a must!' },
     { postId:posts[4].id, userId:user2.id, content:'Which ramen shop? I need to know!' },
     { postId:posts[4].id, userId:user3.id, content:'Shibuya crossing at night is a whole different vibe.' },
     { postId:posts[5].id, userId:user1.id, content:'Also works for street signs! Saved me so many times.' },
@@ -176,18 +316,28 @@ async function main() {
     { postId:posts[8].id, userId:user2.id, content:'Barcelona food scene is definitely underrated.' },
     { postId:posts[10].id, userId:user2.id, content:'This is so helpful! Was Tokyo expensive for food?' },
     { postId:posts[10].id, userId:user3.id, content:'Saving this for my planning. Thanks!' },
+    { postId:posts[12].id, userId:user1.id, content:'Maxwell is legendary! Also try Lau Pa Sat for satay.' },
+    { postId:posts[12].id, userId:user6.id, content:'Singapore hawker centers are UNESCO heritage for a reason!' },
+    { postId:posts[13].id, userId:user1.id, content:'This is the way! I made the same mistake of going at noon once...' },
+    { postId:posts[14].id, userId:user2.id, content:'100% agree. The best meals are always street food.' },
+    { postId:posts[14].id, userId:user3.id, content:'Depends on the country honestly. But for Southeast Asia, absolutely.' },
   ]});
-  console.log('Added comments');
+  console.log('Added 21 comments');
 
   // Saved destinations
-  const amsterdam=cities.find(c=>c.name==='Amsterdam'), santorini=cities.find(c=>c.name==='Santorini');
-  const singapore=cities.find(c=>c.name==='Singapore'), kyoto=cities.find(c=>c.name==='Kyoto');
+  const santorini=cities.find(c=>c.name==='Santorini');
+  const seoul=cities.find(c=>c.name==='Seoul'), capetown=cities.find(c=>c.name==='Cape Town');
+  const dubai=cities.find(c=>c.name==='Dubai'), lisbon=cities.find(c=>c.name==='Lisbon');
+  const prague=cities.find(c=>c.name==='Prague'), marrakech=cities.find(c=>c.name==='Marrakech');
   await prisma.savedDestination.createMany({ data:[
-    { userId:user1.id, cityId:bali.id },{ userId:user1.id, cityId:paris.id },{ userId:user1.id, cityId:santorini.id },
-    { userId:user2.id, cityId:tokyo.id },{ userId:user2.id, cityId:kyoto.id },
-    { userId:user3.id, cityId:singapore.id },{ userId:user3.id, cityId:amsterdam.id },
+    { userId:user1.id, cityId:bali.id },{ userId:user1.id, cityId:paris.id },{ userId:user1.id, cityId:santorini.id },{ userId:user1.id, cityId:seoul.id },
+    { userId:user2.id, cityId:tokyo.id },{ userId:user2.id, cityId:kyoto.id },{ userId:user2.id, cityId:marrakech.id },
+    { userId:user3.id, cityId:singapore.id },{ userId:user3.id, cityId:amsterdam.id },{ userId:user3.id, cityId:lisbon.id },
+    { userId:user4.id, cityId:dubai.id },{ userId:user4.id, cityId:capetown.id },{ userId:user4.id, cityId:bali.id },
+    { userId:user5.id, cityId:tokyo.id },{ userId:user5.id, cityId:barcelona.id },{ userId:user5.id, cityId:rome.id },
+    { userId:user6.id, cityId:prague.id },{ userId:user6.id, cityId:amsterdam.id },
   ]});
-  console.log('Added saved destinations');
+  console.log('Added 18 saved destinations');
 
   // Checklist templates
   await prisma.checklistTemplate.createMany({ data:[
@@ -220,13 +370,18 @@ async function main() {
   ]});
   console.log('Created checklist templates');
 
-  // Trip notes
+  // Trip notes - expanded
   await prisma.tripNote.createMany({ data:[
     { tripId:trip1.id, title:'Arrival Notes', content:'Arrived at Narita. Got Suica card and took Narita Express to Shinjuku.', noteDate:d(now,-3) },
     { tripId:trip1.id, title:'Best Ramen Spots', content:'1. Fuunji (tsukemen) near Shinjuku\n2. Ichiran Shibuya\n3. Afuri (yuzu shio) in Ebisu', noteDate:d(now,-2) },
+    { tripId:trip1.id, title:'Shopping List', content:'- Japanese Kit-Kats\n- Uniqlo basics\n- Nintendo store merch\n- Skincare from Don Quijote', noteDate:d(now,-1) },
     { tripId:trip2.id, title:'Bali Highlights', content:'Top moments:\n- Sunrise at Mount Batur\n- Tegallalang Rice Terrace\n- Uluwatu sunset\n- Cooking class in Ubud', noteDate:d(now,-55) },
+    { tripId:trip2.id, title:'Restaurant Recommendations', content:'Warung Babi Guling Ibu Oka - best suckling pig!\nLocavore - fine dining with local ingredients\nMilk & Madu - brunch spot in Canggu', noteDate:d(now,-54) },
+    { tripId:trip5.id, title:'Must-eat in Singapore', content:'- Hainanese Chicken Rice at Tian Tian\n- Chili Crab at Jumbo Seafood\n- Laksa at 328 Katong\n- Kaya Toast at Ya Kun', noteDate:d(now,-29) },
+    { tripId:trip6.id, title:'Temple Tips', content:'Visit Fushimi Inari EARLY (5-6am) to avoid crowds.\nKinkaku-ji is best in morning light.\nRent a bike to explore Arashiyama area.', noteDate:d(now,-9) },
+    { tripId:trip3.id, title:'Pre-trip Research', content:'Need to book:\n- Eiffel Tower tickets (2 weeks ahead)\n- Sagrada Familia (1 month ahead)\n- Vatican Museum (skip the line!)', noteDate:d(now,-1) },
   ]});
-  console.log('Added trip notes');
+  console.log('Added 8 trip notes');
 
   console.log('Seeding completed! ✅');
 }

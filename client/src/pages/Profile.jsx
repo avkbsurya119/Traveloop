@@ -29,6 +29,7 @@ export default function Profile() {
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
+    username: user?.username || '',
     phone: user?.phone || '',
     city: user?.city || '',
     country: user?.country || '',
@@ -126,6 +127,9 @@ export default function Profile() {
               <h1 className="font-display text-2xl font-bold text-white">
                 {user?.firstName} {user?.lastName}
               </h1>
+              {user?.username && (
+                <p className="text-primary-light text-sm">@{user.username}</p>
+              )}
               <p className="text-muted text-sm">{user?.email}</p>
               {user?.city && user?.country && (
                 <p className="text-muted text-xs mt-1 flex items-center gap-1">
@@ -220,6 +224,7 @@ export default function Profile() {
                   <Input label="First Name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
                   <Input label="Last Name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
                 </div>
+                <Input label="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="your-unique-username" />
                 <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
                   <Input label="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
@@ -240,6 +245,7 @@ export default function Profile() {
               <div className="space-y-0">
                 {[
                   ['Name', `${user?.firstName} ${user?.lastName}`],
+                  ['Username', user?.username ? `@${user.username}` : '—'],
                   ['Email', user?.email],
                   ['Phone', user?.phone || '—'],
                   ['Location', user?.city && user?.country ? `${user.city}, ${user.country}` : '—'],
