@@ -94,13 +94,15 @@ export default function Landing() {
             </div>
 
             <div className="hidden lg:flex items-center gap-9 text-[0.92rem]" style={{ fontWeight: 500, color: 'rgba(255,255,255,0.85)' }}>
-              {['About Us', 'Destinations', 'Travel Packages', 'Offers', 'Contact'].map(l => (
-                <a key={l} href={`#${l.toLowerCase().replace(/\s/g, '-')}`}
-                  className="relative py-1 transition-colors duration-300 hover:text-white group">
-                  {l}
-                  <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white/60 group-hover:w-full transition-all duration-300" />
-                </a>
-              ))}
+              {['About Us', 'Destinations', 'Travel Packages', 'Contact'].map(l => {
+                const path = l === 'Destinations' ? '/#destinations' : `/${l.toLowerCase().replace(/\s/g, '-')}`
+                return (
+                  <Link key={l} to={path} className="relative py-1 transition-colors duration-300 hover:text-white group">
+                    {l}
+                    <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white/60 group-hover:w-full transition-all duration-300" />
+                  </Link>
+                )
+              })}
             </div>
 
             <Link to={isAuthenticated ? '/dashboard' : '/login'}>
@@ -235,8 +237,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ──────────── SECTION 3 — STATS ──────────── */}
-      <section className="relative py-20 overflow-hidden" ref={sec3} style={{ background: '#040C18' }}>
+      {/* ──────────── SECTION 3 — STATS (About Us) ──────────── */}
+      <section id="about-us" className="relative py-20 overflow-hidden" ref={sec3} style={{ background: '#040C18' }}>
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(6,182,212,0.03) 0%, transparent 100%)' }} />
         <div className="relative z-10 max-w-5xl mx-auto px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -255,8 +257,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ──────────── SECTION 4 — CTA ──────────── */}
-      <section className="relative py-28 md:py-36 px-4 overflow-hidden" ref={sec4} style={{ background: '#040C18' }}>
+      {/* ──────────── SECTION 4 — CTA (Travel Packages) ──────────── */}
+      <section id="travel-packages" className="relative py-28 md:py-36 px-4 overflow-hidden" ref={sec4} style={{ background: '#040C18' }}>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-[700px] h-[700px] rounded-full" style={{ background: 'rgba(6,182,212,0.06)', filter: 'blur(140px)' }} />
         </div>
@@ -305,8 +307,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ──────────── FOOTER ──────────── */}
-      <footer className="py-10 text-center text-sm" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', background: '#040C18' }}>
+      {/* ──────────── FOOTER (Contact) ──────────── */}
+      <footer id="contact" className="py-10 text-center text-sm" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', background: '#040C18' }}>
         <p>&copy; 2026 Traveloop. All rights reserved.</p>
       </footer>
     </div>
