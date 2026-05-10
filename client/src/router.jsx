@@ -22,6 +22,7 @@ import Notes from './pages/Notes'
 import Expenses from './pages/Expenses'
 import Invoice from './pages/Invoice'
 import Admin from './pages/Admin'
+import Landing from './pages/Landing'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
@@ -72,8 +73,8 @@ export default function AppRouter() {
         <Route path="/admin" element={<Admin />} />
       </Route>
 
-      {/* Redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" />} />
+      {/* Landing page */}
+      <Route path="/" element={<Landing />} />
       <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   )
