@@ -14,6 +14,7 @@ import CreateTrip from './pages/CreateTrip'
 import BuildItinerary from './pages/BuildItinerary'
 import TripList from './pages/TripList'
 import TripDetail from './pages/TripDetail'
+import TripTimeline from './pages/TripTimeline'
 import Profile from './pages/Profile'
 import Explore from './pages/Explore'
 import Community from './pages/Community'
@@ -57,7 +58,8 @@ export default function AppRouter() {
         <Route path="/trips/new" element={<CreateTrip />} />
         <Route path="/trips/:id" element={<TripDetail />} />
         <Route path="/trips/:id/build" element={<BuildItinerary />} />
-        <Route path="/trips/:id/itinerary" element={<TripDetail />} />
+        <Route path="/trips/:id/itinerary" element={<TripTimeline />} />
+        <Route path="/trips/:id/timeline" element={<TripTimeline />} />
         <Route path="/trips/:id/checklist" element={<Checklist />} />
         <Route path="/trips/:id/notes" element={<Notes />} />
         <Route path="/trips/:id/expenses" element={<Expenses />} />

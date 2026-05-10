@@ -4,13 +4,37 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1A6B4A" />
+    <meta name="description" content="Traveloop — Dream it. Plan it. Loop it. Your intelligent travel planning companion." />
+    <link rel="manifest" href="/manifest.json" />
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
-    <title>Traveloop - Dream it. Plan it. Loop it.</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Traveloop — Dream it. Plan it. Loop it.</title>
+    <style>
+      /* Critical above-the-fold styles to prevent FOUC */
+      :root { --color-dark: #1C1C2E; }
+      html { background: var(--color-dark); }
+      body { margin: 0; font-family: 'DM Sans', sans-serif; background: var(--color-dark); color: #F0F0F8; }
+    </style>
+    <script>
+      /* Apply saved theme before paint to avoid flash */
+      (function() {
+        var t = localStorage.getItem('traveloop-theme');
+        if (t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>
