@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin.routes.js';
 import checklistTemplateRoutes from './routes/checklist-template.routes.js';
 import weatherRoutes from './routes/weather.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import notificationsRoutes from './routes/notifications.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/checklist', checklistTemplateRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Error handler
 app.use(errorHandler);

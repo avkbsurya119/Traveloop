@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Card, CardContent } from '../components/common/Card'
 import { Input } from '../components/common/Input'
 import { Button } from '../components/common/Button'
 import { toast } from '../components/common/Toast'
 import { authApi } from '../api/auth'
-import { ArrowLeft, Mail, KeyRound, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Mail, KeyRound, ShieldCheck, CheckCircle } from 'lucide-react'
 
 const STEPS = { EMAIL: 0, CODE: 1, RESET: 2, DONE: 3 }
+
+const STEP_META = [
+  { icon: Mail, title: 'Forgot password?', subtitle: "Enter your email and we'll send a reset code." },
+  { icon: KeyRound, title: 'Check your email', subtitle: null },
+  { icon: ShieldCheck, title: 'Set new password', subtitle: 'Choose a strong password with at least 8 characters.' },
+]
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
@@ -19,15 +24,13 @@ export default function ForgotPassword() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
 
-  // ─── Step 1: Request reset code ─────────────────────────────────────────────
   const handleEmailSubmit = async (e) => {
     e.preventDefault()
-    const newErrors = {}
-    if (!email) newErrors.email = 'Email required'
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email'
-    setErrors(newErrors)
-    if (Object.keys(newErrors).length > 0) return
-
+    const errs = {}
+    if (!email) errs.email = 'Email required'
+    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Invalid email'
+    setErrors(errs)
+    if (Object.keys(errs).length) return
     setIsLoading(true)
     try {
       await authApi.forgotPassword(email)
@@ -35,41 +38,33 @@ export default function ForgotPassword() {
       setStep(STEPS.CODE)
     } catch (error) {
       toast.error(error.response?.data?.error || 'Something went wrong')
-    } finally {
-      setIsLoading(false)
-    }
+    } finally { setIsLoading(false) }
   }
 
-  // ─── Step 2: Verify code ────────────────────────────────────────────────────
   const handleCodeSubmit = async (e) => {
     e.preventDefault()
-    const newErrors = {}
-    if (!code) newErrors.code = 'Code required'
-    else if (code.length !== 6) newErrors.code = 'Code must be 6 digits'
-    setErrors(newErrors)
-    if (Object.keys(newErrors).length > 0) return
-
+    const errs = {}
+    if (!code) errs.code = 'Code required'
+    else if (code.length !== 6) errs.code = 'Code must be 6 digits'
+    setErrors(errs)
+    if (Object.keys(errs).length) return
     setIsLoading(true)
     try {
       await authApi.verifyResetCode(email, code)
       setStep(STEPS.RESET)
     } catch (error) {
       toast.error(error.response?.data?.error || 'Invalid code')
-    } finally {
-      setIsLoading(false)
-    }
+    } finally { setIsLoading(false) }
   }
 
-  // ─── Step 3: Set new password ───────────────────────────────────────────────
   const handleResetSubmit = async (e) => {
     e.preventDefault()
-    const newErrors = {}
-    if (!newPassword) newErrors.newPassword = 'Password required'
-    else if (newPassword.length < 8) newErrors.newPassword = 'Min 8 characters'
-    if (newPassword !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match'
-    setErrors(newErrors)
-    if (Object.keys(newErrors).length > 0) return
-
+    const errs = {}
+    if (!newPassword) errs.newPassword = 'Password required'
+    else if (newPassword.length < 8) errs.newPassword = 'Min 8 characters'
+    if (newPassword !== confirmPassword) errs.confirmPassword = "Passwords don't match"
+    setErrors(errs)
+    if (Object.keys(errs).length) return
     setIsLoading(true)
     try {
       await authApi.resetPassword(email, code, newPassword)
@@ -77,168 +72,122 @@ export default function ForgotPassword() {
       setStep(STEPS.DONE)
     } catch (error) {
       toast.error(error.response?.data?.error || 'Reset failed')
-    } finally {
-      setIsLoading(false)
-    }
+    } finally { setIsLoading(false) }
   }
 
-  // ─── Step progress indicator ────────────────────────────────────────────────
-  const ProgressDots = () => (
-    <div className="flex items-center justify-center gap-2 mb-6">
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className={`h-2 rounded-full transition-all duration-300 ${
-            i <= step
-              ? 'w-8 bg-primary'
-              : 'w-2 bg-border'
-          }`}
-        />
-      ))}
-    </div>
-  )
+  const meta = STEP_META[Math.min(step, 2)]
+  const StepIcon = meta?.icon
 
   return (
-    <Card>
-      <CardContent>
-        <ProgressDots />
+    <div className="w-full">
+      <div className="mb-6 text-center">
+        <h2 className="font-display text-3xl font-bold text-white mb-2">Reset Password</h2>
+        <p className="text-muted">We'll help you back in</p>
+      </div>
 
-        {/* ── Step 1: Enter email ──────────────────────────────── */}
-        {step === STEPS.EMAIL && (
-          <>
-            <div className="text-center mb-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Mail className="w-7 h-7 text-primary" />
-              </div>
-              <h2 className="font-display text-xl font-bold text-white">
-                Forgot your password?
-              </h2>
-              <p className="text-muted text-sm mt-1">
-                Enter your email and we'll send you a reset code.
-              </p>
-            </div>
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              <Input
-                id="forgot-email"
-                label="Email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                error={errors.email}
+      <div className="bg-surface/80 backdrop-blur-sm border border-border/60 rounded-2xl p-6 shadow-2xl">
+        {/* Progress bar */}
+        {step < STEPS.DONE && (
+          <div className="flex items-center gap-2 mb-6">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                  i < step ? 'bg-primary' : i === step ? 'bg-primary/60' : 'bg-border'
+                }`}
               />
-              <Button id="forgot-send" type="submit" isLoading={isLoading} className="w-full">
-                Send Reset Code
-              </Button>
-            </form>
-          </>
+            ))}
+          </div>
         )}
 
-        {/* ── Step 2: Enter code ───────────────────────────────── */}
-        {step === STEPS.CODE && (
-          <>
-            <div className="text-center mb-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <KeyRound className="w-7 h-7 text-primary" />
-              </div>
-              <h2 className="font-display text-xl font-bold text-white">Check your email</h2>
-              <p className="text-muted text-sm mt-1">
-                We sent a 6-digit code to <span className="text-white">{email}</span>
-              </p>
+        {/* Step icon */}
+        {step < STEPS.DONE && (
+          <div className="text-center mb-5">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center">
+              <StepIcon className="w-6 h-6 text-primary-light" />
             </div>
-            <form onSubmit={handleCodeSubmit} className="space-y-4">
-              <Input
-                id="forgot-code"
-                label="Verification Code"
-                type="text"
-                inputMode="numeric"
-                placeholder="123456"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                error={errors.code}
-                className="text-center text-2xl tracking-[0.5em] font-mono"
-              />
-              <Button id="forgot-verify" type="submit" isLoading={isLoading} className="w-full">
-                Verify Code
-              </Button>
-            </form>
-            <button
-              onClick={() => setStep(STEPS.EMAIL)}
-              className="w-full mt-3 text-sm text-muted hover:text-white transition-colors text-center"
-            >
+            <h3 className="font-semibold text-white">{meta.title}</h3>
+            {meta.subtitle && <p className="text-muted text-sm mt-1">{meta.subtitle}</p>}
+            {step === STEPS.CODE && (
+              <p className="text-muted text-sm mt-1">
+                We sent a 6-digit code to <span className="text-white font-medium">{email}</span>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Step 1: Email */}
+        {step === STEPS.EMAIL && (
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <Input label="Email address" type="email" placeholder="you@example.com"
+              value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
+            <Button type="submit" isLoading={isLoading} className="w-full">
+              Send Reset Code
+            </Button>
+          </form>
+        )}
+
+        {/* Step 2: Code */}
+        {step === STEPS.CODE && (
+          <form onSubmit={handleCodeSubmit} className="space-y-4">
+            <Input
+              label="Verification Code"
+              type="text"
+              inputMode="numeric"
+              placeholder="000000"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              error={errors.code}
+              className="text-center text-2xl tracking-[0.5em] font-mono"
+            />
+            <Button type="submit" isLoading={isLoading} className="w-full">
+              Verify Code
+            </Button>
+            <button type="button" onClick={() => setStep(STEPS.EMAIL)}
+              className="w-full text-sm text-muted hover:text-white transition-colors text-center">
               Didn't receive it? Go back
             </button>
-          </>
+          </form>
         )}
 
-        {/* ── Step 3: New password ─────────────────────────────── */}
+        {/* Step 3: New password */}
         {step === STEPS.RESET && (
-          <>
-            <div className="text-center mb-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <ShieldCheck className="w-7 h-7 text-primary" />
-              </div>
-              <h2 className="font-display text-xl font-bold text-white">Set new password</h2>
-              <p className="text-muted text-sm mt-1">
-                Choose a strong password with at least 8 characters.
-              </p>
-            </div>
-            <form onSubmit={handleResetSubmit} className="space-y-4">
-              <Input
-                id="forgot-new-password"
-                label="New Password"
-                type="password"
-                placeholder="••••••••"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                error={errors.newPassword}
-              />
-              <Input
-                id="forgot-confirm-password"
-                label="Confirm Password"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                error={errors.confirmPassword}
-              />
-              <Button id="forgot-reset" type="submit" isLoading={isLoading} className="w-full">
-                Reset Password
-              </Button>
-            </form>
-          </>
+          <form onSubmit={handleResetSubmit} className="space-y-4">
+            <Input label="New Password" type="password" placeholder="••••••••"
+              value={newPassword} onChange={(e) => setNewPassword(e.target.value)} error={errors.newPassword} />
+            <Input label="Confirm Password" type="password" placeholder="••••••••"
+              value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} error={errors.confirmPassword} />
+            <Button type="submit" isLoading={isLoading} className="w-full">
+              Reset Password
+            </Button>
+          </form>
         )}
 
-        {/* ── Step 4: Success ──────────────────────────────────── */}
+        {/* Step 4: Done */}
         {step === STEPS.DONE && (
           <div className="text-center py-4">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-              <ShieldCheck className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-green-400" />
             </div>
-            <h2 className="font-display text-xl font-bold text-white mb-2">All set!</h2>
+            <h3 className="font-display text-xl font-bold text-white mb-2">All done!</h3>
             <p className="text-muted text-sm mb-6">
-              Your password has been reset. You can now log in with your new password.
+              Your password has been reset. Sign in with your new password.
             </p>
-            <Button id="forgot-go-login" onClick={() => navigate('/login')} className="w-full">
+            <Button onClick={() => navigate('/login')} className="w-full">
               Go to Login
             </Button>
           </div>
         )}
 
-        {/* Back to login link (on non-success steps) */}
         {step !== STEPS.DONE && (
-          <div className="mt-6 text-center">
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-1 text-sm text-muted hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Login
+          <div className="mt-5 text-center">
+            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Back to Login
             </Link>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

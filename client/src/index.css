@@ -2,18 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Midnight (default) ─────────────────────────── */
 :root {
   --radius: 12px;
+  --color-primary: #1A6B4A;
+  --color-primary-light: #2ECC71;
+  --color-secondary: #F4A623;
+  --color-dark: #1C1C2E;
+  --color-surface: #252540;
+  --color-border: #3A3A5C;
+  --color-muted: #8888AA;
+}
+
+/* ── Ocean Dark ─────────────────────────────────── */
+html[data-theme="ocean"] {
+  --color-primary: #0070F3;
+  --color-primary-light: #3EA6FF;
+  --color-secondary: #F59E0B;
+  --color-dark: #060D1A;
+  --color-surface: #0D1E35;
+  --color-border: #1A3557;
+  --color-muted: #6B9CC8;
+}
+
+/* ── Forest Dark ────────────────────────────────── */
+html[data-theme="forest"] {
+  --color-primary: #2D6A4F;
+  --color-primary-light: #52B788;
+  --color-secondary: #F4A623;
+  --color-dark: #081C0F;
+  --color-surface: #102B18;
+  --color-border: #1C4A2A;
+  --color-muted: #74B890;
+}
+
+/* ── Dusk (warm purple) ─────────────────────────── */
+html[data-theme="dusk"] {
+  --color-primary: #7C3AED;
+  --color-primary-light: #A78BFA;
+  --color-secondary: #F59E0B;
+  --color-dark: #150B25;
+  --color-surface: #200D35;
+  --color-border: #3D1F6E;
+  --color-muted: #9B7EC8;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: 'DM Sans', sans-serif;
-  background-color: #1C1C2E;
+  background-color: var(--color-dark);
   color: #F0F0F8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -23,6 +70,193 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Syne', sans-serif;
 }
 
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1C1C2E;
+}
+::-webkit-scrollbar-thumb {
+  background: #3A3A5C;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1A6B4A;
+}
+
+/* Glassmorphism utility */
+@layer utilities {
+  .glass {
+    background: rgba(37, 37, 64, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(58, 58, 92, 0.5);
+  }
+
+  .glass-dark {
+    background: rgba(28, 28, 46, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(58, 58, 92, 0.4);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(26, 107, 74, 0.4), 0 0 40px rgba(26, 107, 74, 0.15);
+  }
+
+  .glow-secondary {
+    box-shadow: 0 0 20px rgba(244, 166, 35, 0.4), 0 0 40px rgba(244, 166, 35, 0.15);
+  }
+
+  .glow-hover:hover {
+    box-shadow: 0 0 24px rgba(26, 107, 74, 0.5), 0 8px 32px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #2ECC71, #1A6B4A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #F4A623, #f9d675);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-mesh {
+    background-color: var(--color-dark);
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(26, 107, 74, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(244, 166, 35, 0.07) 0%, transparent 40%),
+      radial-gradient(ellipse at 60% 80%, rgba(46, 204, 113, 0.06) 0%, transparent 40%);
+  }
+
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  .card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(26, 107, 74, 0.2);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out forwards;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.4s ease-out forwards;
+  }
+
+  .border-gradient {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(#252540, #252540) padding-box,
+      linear-gradient(135deg, #1A6B4A, #F4A623) border-box;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Keyframes */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(26, 107, 74, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(26, 107, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(26, 107, 74, 0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-x 4s ease infinite;
+}
+
+/* Skeleton */
 .skeleton {
   @apply animate-pulse bg-surface rounded;
+}
+
+/* Print styles */
+@media print {
+  body { background: white; color: black; }
+  .no-print { display: none !important; }
+  nav, aside { display: none !important; }
+}
+
+/* Selection color */
+::selection {
+  background: rgba(26, 107, 74, 0.3);
+  color: #F0F0F8;
+}
+
+/* Input autofill fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset !important;
+  -webkit-text-fill-color: #F0F0F8 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Smooth transitions for nav links */
+a, button {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
 }
